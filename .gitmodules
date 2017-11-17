@@ -1,0 +1,7 @@
+[submodule "dssat-csm"]
+	path = dssat-csm
+	url = git@github.com:alee/dssat-csm
+	branch = docker
+[submodule "overland_flow"]
+	path = overland_flow
+	url = git@github.com:mcflugen/overland_flow
