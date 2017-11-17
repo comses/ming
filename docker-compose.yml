@@ -1,0 +1,7 @@
+version: '3'
+services:
+  dssat:
+    build: ./dssat-csm
+    image: comses/dssat:4.6.6
+    volumes:
+      - ./data:/code/run
