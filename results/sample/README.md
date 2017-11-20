@@ -1,5 +1,12 @@
 # Initial example weather station runs
 
+## baseline original USAM8031.WTH
+```
+RUN    TRT FLO MAT TOPWT HARWT  RAIN  TIRR   CET  PESW  TNUP  TNLF   TSON TSOC
+           dap dap kg/ha kg/ha    mm    mm    mm    mm kg/ha kg/ha  kg/ha t/ha
+  1 MZ   1  75 125 19875  8181   384     0   522   357   261    17  14660  157
+```
+
 ## _1032_ file
 
 ```
