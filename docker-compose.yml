@@ -1,7 +1,7 @@
 version: '3'
 services:
-  dssat:
-    build: ./dssat-csm
-    image: comses/dssat:4.6.6
+  ming:
+    build: ./src
+    image: comses/ming:1.0
     volumes:
       - ./data:/code/run
