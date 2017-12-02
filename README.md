@@ -12,8 +12,9 @@ Install [docker and docker-compose](https://docs.docker.com/compose/install/) th
 % docker-compose run --rm ming bash
 container> ./run.py /data/test
 container> ./run.py /data/<actual-input-directory-with-65536-wth-files>
+```
 
 ## build status
 [![Build Status](https://travis-ci.org/comses/ming.svg?branch=master)](https://travis-ci.org/comses/ming)
-```
+
 
