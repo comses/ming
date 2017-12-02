@@ -4,4 +4,6 @@ services:
     build: ./src
     image: comses/ming:1.0
     volumes:
-      - ./data:/code/run
+      - ./data:/data
+      - ./src:/code/run
+      - ./results:/results
