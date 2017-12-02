@@ -3,8 +3,10 @@
 # DSSAT generated files
 *.OUT
 LUN.LST
-
-
+DSSAT46.INH
+DSSAT46.INP
+mulch.csv
+src/results
 
 # Created by https://www.gitignore.io/api/python,fortran
 
