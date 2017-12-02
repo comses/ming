@@ -1,4 +1,6 @@
 language: "python"
+git:
+  submodules: false
 sudo: required
 python:
   - "3.5"
