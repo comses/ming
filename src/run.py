@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import logging
 import os
 import re
@@ -9,12 +10,28 @@ import subprocess
 
 from pathlib import Path
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname) -8s %(message)s', filename='dssat-runner.log', filemode='w')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname) -8s %(message)s', filename='dssat-runner.log',
+                    filemode='w')
 
 logger = logging.getLogger(__name__)
 
 
-DSSAT_WORK_DIR = 'dssat'  # working directory where dssat will be run required dssat configuration files
+ALL_DATA_CSV_HEADER = [
+    'Grid ID', 'Latitude', 'Longitude', 'TOPWT (kg/ha)', 'HARWT (kg/ha)', 'RAIN (mm)',
+]
+"""
+fields from summary.csv
+[
+'RUNNO', 'TRNO', 'R#', 'O#', 'C#', 'CR', 'MODEL', 'EXNAME', 'TNAM', 'FNAM', 'WSTA', 'SOIL_ID', 'SDAT', 'PDAT', 'EDAT',
+'ADAT', 'MDAT', 'HDAT', 'DWAP', 'CWAM', 'HWAM', 'HWAH', 'BWAH', 'PWAM', 'HWUM', 'H#AM', 'H#UM', 'HIAM', 'LAIX', 'IR#M',
+'IRCM', 'PRCM', 'ETCM', 'EPCM', 'ESCM', 'ROCM', 'DRCM', 'SWXM', 'NI#M', 'NICM', 'NFXM', 'NUCM', 'NLCM', 'NIAM', 'CNAM',
+'GNAM', 'PI#M', 'PICM', 'PUPC', 'SPAM', 'KI#M', 'KICM', 'KUPC', 'SKAM', 'RECM', 'ONTAM', 'ONAM', 'OPTAM', 'OPAM',
+'OCTAM', 'OCAM', 'DMPPM', 'DMPEM', 'DMPTM', 'DMPIM', 'YPPM', 'YPEM', 'YPTM', 'YPIM', 'DPNAM', 'DPNUM', 'YPNAM', 'YPNUM',
+'NDCH', 'TMAXA', 'TMINA', 'SRADA', 'DAYLA', 'CO2A', 'PRCP', 'ETCP', 'ESCP', 'EPCP'
+]
+"""
+
+DSSAT_WORK_DIR = 'dssat'  # working directory where dssat will be run with required dssat configuration + input files
 BASE_RESULTS_DIR = 'results'
 SENTINEL_VALUE = 'XYZZY'
 TEMPLATE_FILENAME = 'template.mzx'
@@ -51,9 +68,14 @@ def main():
         return
 
     pathlist = path.glob("**/*.WTH")
-    for path in pathlist:
-        logger.debug("inspecting WTH file %s in root directory %s", path, args.directory)
-        process(path)
+    os.makedirs(BASE_RESULTS_DIR, exist_ok=True)
+    all_data_path = Path(BASE_RESULTS_DIR, 'all-data.csv')
+    with all_data_path.open('w') as all_data:
+        summary_csv = csv.writer(all_data)
+        summary_csv.writerow(ALL_DATA_CSV_HEADER)
+        for path in pathlist:
+            logger.debug("inspecting WTH file %s in root directory %s", path, args.directory)
+            process(path, summary_csv)
 
 
 def extract_grid_id(filename):
@@ -71,7 +93,21 @@ def extract_grid_id(filename):
     return grid_id, output_command_filename, output_weather_station_filename
 
 
-def process(wth_path: Path):
+def to_latlong(grid_id):
+    lat = grid_id / 256 * -0.0002712673611110772 + 42.05166666666666
+    lon = grid_id % 256 * 0.00027126736111104943 - 93.78472222222221
+    return lat, lon
+
+
+def _extract_output(output_path):
+    extracted_output = subprocess.run(['/code/run/extract.sh', output_path.name],
+                                      stdout=subprocess.PIPE, cwd=str(output_path.parent))
+    parsed_output = extracted_output.stdout.decode('utf-8').rstrip()
+    logger.debug("parsed output: %s and split into %s", parsed_output, parsed_output.split(' '))
+    return parsed_output.split(' ')
+
+
+def process(wth_path: Path, summary_csv):
     # copy input WTH file
     wth_filename = wth_path.name
     grid_id, command_filename, weather_station_filename = extract_grid_id(wth_filename)
@@ -93,7 +129,12 @@ def process(wth_path: Path):
     shutil.move(weather_station_path, results_dir)
     shutil.move(os.path.join(DSSAT_WORK_DIR, "summary.csv"), results_dir)
     shutil.move(str(command_file), results_dir)
-    Path(results_dir, "output.txt").write_text(output.stdout.decode("utf-8"))
+    output_path = Path(results_dir, "output.txt")
+    output_path.write_text(output.stdout.decode("utf-8"))
+    # create entry in all data csv
+    lat, lon = to_latlong(int(grid_id))
+    topwt, harwt, rain = _extract_output(output_path)
+    summary_csv.writerow([grid_id, lat, lon, topwt, harwt, rain])
 
 
 if __name__ == "__main__":
