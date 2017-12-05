@@ -1,6 +1,13 @@
 # Initial example weather station runs
 
-## baseline original USAM8031.WTH
+## baseline original USAM8031.WTH + ARAM8091.MZX (minimized DSSAT runoff curve)
+```
+RUN    TRT FLO MAT TOPWT HARWT  RAIN  TIRR   CET  PESW  TNUP  TNLF   TSON TSOC
+           dap dap kg/ha kg/ha    mm    mm    mm    mm kg/ha kg/ha  kg/ha t/ha
+  1 MZ   1  75 125 19664  7701   384     0   487   433   254    26  14654  157
+  ```
+
+## baseline original USAM8031.WTH + ARAM8001.MZX (DSSAT calculates infiltration and runoff)
 ```
 RUN    TRT FLO MAT TOPWT HARWT  RAIN  TIRR   CET  PESW  TNUP  TNLF   TSON TSOC
            dap dap kg/ha kg/ha    mm    mm    mm    mm kg/ha kg/ha  kg/ha t/ha
