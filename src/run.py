@@ -10,7 +10,7 @@ import subprocess
 
 from pathlib import Path
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname) -8s %(message)s', filename='dssat-runner.log',
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname) -8s %(message)s', filename='ming.log',
                     filemode='w')
 
 logger = logging.getLogger(__name__)
@@ -67,14 +67,13 @@ def main():
         logger.error("%s is not a directory or does not exist, aborting.", path)
         return
 
-    pathlist = path.glob("**/*.WTH")
+    pathlist = path.glob("*_[0-9]*.WTH")
     os.makedirs(BASE_RESULTS_DIR, exist_ok=True)
     all_data_path = Path(BASE_RESULTS_DIR, 'all-data.csv')
     with all_data_path.open('w') as all_data:
         summary_csv = csv.writer(all_data)
         summary_csv.writerow(ALL_DATA_CSV_HEADER)
         for path in pathlist:
-            logger.debug("inspecting WTH file %s in root directory %s", path, args.directory)
             process(path, summary_csv)
 
 
@@ -103,7 +102,6 @@ def _extract_output(output_path):
     extracted_output = subprocess.run(['/code/run/extract.sh', output_path.name],
                                       stdout=subprocess.PIPE, cwd=str(output_path.parent))
     parsed_output = extracted_output.stdout.decode('utf-8').rstrip()
-    logger.debug("parsed output: %s and split into %s", parsed_output, parsed_output.split(' '))
     return parsed_output.split(' ')
 
 
@@ -111,7 +109,6 @@ def process(wth_path: Path, summary_csv):
     # copy input WTH file
     wth_filename = wth_path.name
     grid_id, command_filename, weather_station_filename = extract_grid_id(wth_filename)
-    logger.debug("grid id: %s", grid_id)
     template_file = Path(TEMPLATE_FILENAME)
     results_dir = os.path.join(BASE_RESULTS_DIR, grid_id)
     os.makedirs(results_dir, exist_ok=True)
