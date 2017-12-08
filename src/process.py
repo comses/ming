@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+from datetime import datetime
 import logging
 import os
 import re
@@ -68,14 +69,21 @@ def main():
         return
 
     pathlist = path.glob("*_[0-9]*.WTH")
-    os.makedirs(BASE_RESULTS_DIR, exist_ok=True)
-    all_data_path = Path(BASE_RESULTS_DIR, 'all-data.csv')
+    # the base results directory for this particular run
+    base_results_dir = make_results_dir()
+    os.makedirs(base_results_dir, exist_ok=True)
+    all_data_path = Path(base_results_dir, 'all-data.csv')
     with all_data_path.open('w') as all_data:
         summary_csv = csv.writer(all_data)
         summary_csv.writerow(ALL_DATA_CSV_HEADER)
         for path in pathlist:
-            process(path, summary_csv)
+            process(path, base_results_dir, summary_csv)
 
+
+def make_results_dir():
+    today = datetime.now()
+    # Organizes results by date with time subdirectories '2017-12-25/12.37'
+    return os.path.join(BASE_RESULTS_DIR, today.strftime('%Y-%m-%d/%H.%M'))
 
 def extract_grid_id(filename):
     """
@@ -105,13 +113,13 @@ def _extract_output(output_path):
     return parsed_output.split(' ')
 
 
-def process(wth_path: Path, summary_csv):
+def process(wth_path: Path, base_results_dir, summary_csv):
     # copy input WTH file
     wth_filename = wth_path.name
     grid_id, command_filename, weather_station_filename = extract_grid_id(wth_filename)
     template_file = Path(TEMPLATE_FILENAME)
-    results_dir = os.path.join(BASE_RESULTS_DIR, grid_id)
-    os.makedirs(results_dir, exist_ok=True)
+    grid_results_dir = os.path.join(base_results_dir, grid_id)
+    os.makedirs(grid_results_dir, exist_ok=True)
     # generate new command file replacing sentinel value in template.mzx with grid_id
     command_file = Path(DSSAT_WORK_DIR, command_filename)
     with template_file.open('r') as template, command_file.open('w') as out:
@@ -123,10 +131,10 @@ def process(wth_path: Path, summary_csv):
     # execute dssat on the new command file
     output = subprocess.run(["dssat", "A", command_filename], stdout=subprocess.PIPE, cwd=DSSAT_WORK_DIR)
     # copy generated dssat summary.csv to dedicated results directory along with all the inputs
-    shutil.move(weather_station_path, results_dir)
-    shutil.move(os.path.join(DSSAT_WORK_DIR, "summary.csv"), results_dir)
-    shutil.move(str(command_file), results_dir)
-    output_path = Path(results_dir, "output.txt")
+    shutil.move(weather_station_path, grid_results_dir)
+    shutil.move(os.path.join(DSSAT_WORK_DIR, "summary.csv"), grid_results_dir)
+    shutil.move(str(command_file), grid_results_dir)
+    output_path = Path(grid_results_dir, "output.txt")
     output_path.write_text(output.stdout.decode("utf-8"))
     # create entry in all data csv
     lat, lon = to_latlong(int(grid_id))
